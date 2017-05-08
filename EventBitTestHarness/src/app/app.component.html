@@ -1,5 +1,41 @@
-<header></header>
+<div [ngClass]="isLoggedIn() ? 'PagePostLogin' : 'PagePreLogin'">
+    
+    <table style="width:100%">
+        <tr>
+            <td [ngClass]="isLoggedIn() ? 'width250' : ''">
+                <header></header>
+            </td>
+            <td [hidden]="!isLoggedIn()">
+                
+                <div class="stackRight">
+                    Logged into <strong>{{getEnvironment()}}</strong> as <strong>{{getUserName()}}</strong>
+                </div>
+                
+                <button class="stackRight" (click)="logout()" >Log Out</button>
+            </td>
+        </tr>
+    </table>
+    
 
-<login [hidden]="isLoggedIn()"></login>
+    <login [hidden]="isLoggedIn()"></login>
 
-<mainbody  [hidden]="!isLoggedIn()"></mainbody>
+    <mainbody [hidden]="!isLoggedIn()"></mainbody>
+
+    <div *ngFor="let message of messages"
+         [config]="{ show: true }"  class="modal fade" bsModal [config]="{backdrop: 'static'}"
+        tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title pull-left">{{MessageStatus[message.messageStatus]}}</h4>
+                    <button type="button" class="close pull-right" aria-label="Close" (click)="closeModal(message)">
+                    <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    {{message.message}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

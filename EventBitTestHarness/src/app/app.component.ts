@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { LoginService } from './login.service';
+import { MessageService, Message, MessageStatus } from './message.service';
 
 @Component({
   selector: 'app-root',
@@ -8,12 +9,30 @@ import { LoginService } from './login.service';
   //providers: [LoginService]
 })
 export class AppComponent {
-  
+    public messages:Message[] = [];
+    public MessageStatus=MessageStatus;
 
-  constructor(private loginService: LoginService) {
-  }
+    constructor(private loginService: LoginService, private messageService:MessageService) {
+      this.messages = messageService.messages;
+    }
 
-  isLoggedIn() : Boolean{
-    return this.loginService.IsLoggedIn();
-  }
+    logout() {
+        this.loginService.logout();
+    }
+
+    isLoggedIn() : Boolean{
+        return this.loginService.IsLoggedIn();
+      }
+
+    closeModal(message:Message) {
+        this.messages.splice(this.messages.indexOf(message), 1);
+    }
+
+    getEnvironment() {
+        return this.loginService.environment;
+    }
+
+    getUserName() {
+        return this.loginService.userName;
+    }
 }

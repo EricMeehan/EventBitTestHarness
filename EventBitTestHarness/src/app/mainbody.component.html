@@ -1,0 +1,267 @@
+<div style="margin:50px;">
+
+    <label>Show:</label>
+    <select [(ngModel)]="currentShow" (ngModelChange)="showChanged()">
+        <option *ngFor="let show of shows" [value]="show.showCode">
+            {{show.name}}
+        </option>
+    </select>
+
+<tabset *ngIf="currentShow">
+    <tab heading="Data Snapshots">
+        
+        <table class="TwoColTable">
+            <tr>
+                <td>
+                    <div *ngIf="!trackedData">
+                        No snapshot loaded yet for {{currentShow}}
+                    </div>
+                    
+                    <div *ngIf="trackedData">
+                        <strong>Snapshot URL:</strong> {{trackedData.url}}
+                        <br/>
+                        <strong>Current snapshot:</strong> {{trackedData.UniqueIdentifier}}
+                        <br/>
+                        <strong>Loaded at:</strong> {{trackedData.TimeStamp | date: 'hh:mm:ss MM/dd/yy'}}
+                    </div>
+                </td>
+                <td>
+                    <button (click)="pullSnapShot()">
+                        {{!trackedData ? 'Load Snapshot' : 'Reload Snapshot'}}
+                    </button>
+                </td>
+            </tr>
+            <tr *ngIf="trackedData">
+                <td>
+                    <label>Table</label>
+                    <select [(ngModel)]="currentTable">
+                        <option *ngFor="let table of trackedData.Tables" [value]="table.TableName">
+                            {{table.TableName}}
+                        </option>
+                    </select>
+                    
+                    <template #popTemplate>
+                        <ul>
+                            <li *ngFor="let chunkUri of trackedData.tablesMap[currentTable].ChunkURIs">
+                                {{chunkUri}}
+                            </li>
+                        </ul>
+                    </template>
+
+                    <button *ngIf="trackedData.tablesMap[currentTable]"
+                            type="button" 
+                            [popover]="popTemplate" 
+                            popoverTitle="Chunk URIs" 
+                            placement="right">View Chunk URIs
+                    </button>
+                    
+                </td>
+                <td>
+                    <button (click)="pullTableData()">Pull All Table Chunks</button>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    
+                    <div *ngIf="trackedData && currentTable && trackedData.tablesMap && trackedData.tablesMap[currentTable] && getSnapShotRows()">
+                        
+                        <table class="marginCenter">
+                            <tr>
+                                <td>
+                                    <strong>{{currentTable}} SnapShot</strong>
+                                </td>
+                                <td>
+                                    Showing rows <br/>
+                                    {{itemsPerPageSnapShot * (this.currentPageSnapShot - 1) + 1}} - 
+                                    {{getSnapShotRows().length < itemsPerPageSnapShot * currentPageSnapShot ? getSnapShotRows().length : itemsPerPageSnapShot * currentPageSnapShot }} 
+                                    of {{getSnapShotRows().length}}
+                                </td>
+                                <td>
+                                    <template #snapshotFilterTemplate>
+                                        <table>
+                                            <tr *ngFor="let col of trackedData.tablesMap[currentTable].OrderedColumnSchema">
+                                                <td>
+                                                    <label>{{col}}</label>:
+                                                </td>
+                                                <td>
+                                                    <input type="text" [(ngModel)]="trackedData.tablesMap[currentTable].Filter[col]" (ngModelChange)="snapShotFiltersChanged()" />
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </template>
+
+                                    <button *ngIf="trackedData && currentTable && trackedData.tablesMap && trackedData.tablesMap[currentTable].Data"
+                                            type="button"
+                                            [popover]="snapshotFilterTemplate"
+                                            popoverTitle="Snapshot Filters"
+                                            placement="right">
+                                        <img class="icon icons8-Filter" width="25" height="25" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAACGUlEQVRoQ+2a7TUEMRSG360AHegAHVAJOqADHaACVEIHqAQVcJ4jIZvZzNzMxMjsSf7s7jl3kvvkvvdOPnalLWmrLeFQDPIs6XAhcE+STryvMcjnQiA6/qdAapecn/AfP1Mge5LeK43OrqQ351sS5EXSgSQ+0V9tMEA8ujx+DfM5jgiGJJGHOaosKr4YAXEcTvSmXNh3EdmRdC/pvBKYO0lnkj4k4eOaWlJJTQkmMrXAhBBEAumvtb7qVAvMIAREQ2X2v2FMEBYQbAgllYJ2Kelmppy5kHTtxqLodOQU+jEUEW9LkjE7NJKfIvCXLXs8KwhOZ3c+knTUODkgc8CMgrDmSDyx4WC8/SnTJVqYi9nyzY2Id5gcOXUvJWB6E9FASXWkoLCyeHAyNjz2azIWhB5KwUyGGCutcKamwhSBKAEyJTLFIEqB0E/u8j+5HM9KjMB4So6EY4bL/xxfOsvxnIdD21Ig9Bnu3Kz+FNuJlgTB+c5eOkFktbNOyODq19yRM7Q6aLUzj98iMlEyLSIprTVpNWl9z0DLkZYj5jdSnmSatJq0mrT6Z6DlyNw5MnTeVX1E/N7dH0pw6L3p+q56EAA4Rb9yl0RA8P02ksQiQPz+nesHTiNpRIro+OPVxYD4AHCeCxCXq6HcOtfLmWW+Y156P5LyJ5YbJy60YuMX68gwozgfym2xILHc+F3sDzxzRsQQtPEmWwPyBd+pjjPs5iQjAAAAAElFTkSuQmCC">
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" style="text-align:center;">
+                                    <pagination [boundaryLinks]="true" 
+                                        [totalItems]="getSnapShotRows() ? getSnapShotRows().length / (itemsPerPageSnapShot / 10) : 0"
+                                        [(ngModel)]="currentPageSnapShot"
+                                        [maxSize]="20"
+                                        class="pagination-sm"
+                                        previousText="&lsaquo;"
+                                        nextText="&rsaquo;"
+                                        firstText="&laquo;"
+                                        lastText="&raquo;"></pagination>
+                                </td>
+                            </tr>
+                        </table>
+
+
+                        <table class="snapshotTable">
+                            <tr>
+                                <th>
+                                    Arbitrary Index
+                                </th>
+                                <th *ngFor="let col of trackedData.tablesMap[currentTable].OrderedColumnSchema">
+                                    {{col}}
+                                </th>
+                            </tr>
+                            <tr *ngFor="let row of getSnapShotRows() | pageFilter:{itemsperpage:itemsPerPageSnapShot, currentPage:currentPageSnapShot};">
+                                <td>
+                                    {{trackedData.tablesMap[currentTable].Data.indexOf(row) + 1}}
+                                </td>
+                                <td *ngFor="let cell of row">
+                                    {{cell}}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+    </tab>
+    <tab heading="Entity Feed">
+        <table class="TwoColTable">
+            <tr>
+                <td>
+                    <label>Entity</label>
+                    <select [(ngModel)]="currentEntity">
+                        <option *ngFor="let entity of entities" [value]="entity">
+                            {{entity}}
+                        </option>
+                    </select>
+
+                    <template #pullLogTemplate>
+                        <ul>
+                            <li *ngFor="let pull of entityData.Entities[currentEntity].pullLog">
+                                <strong>Pull URL:</strong>{{pull.url}}
+                                <br/>
+                                <strong>Pull Time: </strong>{{pull.timeStamp | date: 'hh:mm:ss MM/dd/yy'}}
+                                <br/>
+                                <strong>Row Count:</strong>{{pull.rows.length}}
+                            </li>
+                        </ul>
+                    </template>
+
+                    <button *ngIf="entityData && entityData.Entities[currentEntity]"
+                            type="button" 
+                            [popover]="pullLogTemplate" 
+                            popoverTitle="Pull Log For Entity: {{currentEntity}}"
+                            placement="right"
+                            style="margin-left:50px;">
+                        View Pull Log for {{currentEntity}}    
+                    </button>
+
+                </td>
+                <td>
+                    <label>Max Rows:</label>
+                    <input [(ngModel)]="entityPullSize" type="number" />
+                    <button (click)="pullEntityData()">Pull Entity Data</button>
+                </td>
+            </tr>
+            <tr *ngIf="entityData && currentEntity && entityData.Entities[currentEntity]">
+                <td colspan="2">
+                    <div *ngIf="!entityData.Entities[currentEntity].data">
+                        No data for entity {{currentEntity}}
+                    </div>
+                    
+                    
+                    <table class="marginCenter">
+                        <tr>
+                            <td>
+                                <strong>{{currentEntity}} Entity Feed</strong>
+                            </td>
+                            <td>
+                                <div>Showing rows <br/>
+                                    {{itemsPerPageEntity * (currentPageEntity - 1) + 1}} - 
+                                    {{getEntityRows().length < itemsPerPageEntity * currentPageEntity ? getEntityRows().length : itemsPerPageEntity * currentPageEntity }} 
+                                    of {{getEntityRows().length}} </div>
+                            </td>
+                            <td>
+                                <template #entityFilterTemplate>
+                                    <table>
+                                        <tr *ngFor="let col of entityData.Entities[currentEntity].getColumns()">
+                                            <td>
+                                                <label>{{col}}</label>:
+                                            </td>
+                                            <td>
+                                                <input type="text" [(ngModel)]="entityData.Entities[currentEntity].filter[col]" (ngModelChange)="entityFiltersChanged()" />
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </template>
+
+                                <button *ngIf="entityData && currentEntity && entityData.Entities && entityData.Entities[currentEntity].data"
+                                        type="button"
+                                        [popover]="entityFilterTemplate"
+                                        popoverTitle="Entity Filters"
+                                        placement="right">
+                                    <img class="icon icons8-Filter" width="25" height="25" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAACGUlEQVRoQ+2a7TUEMRSG360AHegAHVAJOqADHaACVEIHqAQVcJ4jIZvZzNzMxMjsSf7s7jl3kvvkvvdOPnalLWmrLeFQDPIs6XAhcE+STryvMcjnQiA6/qdAapecn/AfP1Mge5LeK43OrqQ351sS5EXSgSQ+0V9tMEA8ujx+DfM5jgiGJJGHOaosKr4YAXEcTvSmXNh3EdmRdC/pvBKYO0lnkj4k4eOaWlJJTQkmMrXAhBBEAumvtb7qVAvMIAREQ2X2v2FMEBYQbAgllYJ2Kelmppy5kHTtxqLodOQU+jEUEW9LkjE7NJKfIvCXLXs8KwhOZ3c+knTUODkgc8CMgrDmSDyx4WC8/SnTJVqYi9nyzY2Id5gcOXUvJWB6E9FASXWkoLCyeHAyNjz2azIWhB5KwUyGGCutcKamwhSBKAEyJTLFIEqB0E/u8j+5HM9KjMB4So6EY4bL/xxfOsvxnIdD21Ig9Bnu3Kz+FNuJlgTB+c5eOkFktbNOyODq19yRM7Q6aLUzj98iMlEyLSIprTVpNWl9z0DLkZYj5jdSnmSatJq0mrT6Z6DlyNw5MnTeVX1E/N7dH0pw6L3p+q56EAA4Rb9yl0RA8P02ksQiQPz+nesHTiNpRIro+OPVxYD4AHCeCxCXq6HcOtfLmWW+Y156P5LyJ5YbJy60YuMX68gwozgfym2xILHc+F3sDzxzRsQQtPEmWwPyBd+pjjPs5iQjAAAAAElFTkSuQmCC">
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="text-align: center;">
+                                <pagination [boundaryLinks]="true" 
+                                [totalItems]="getEntityRows() ? getEntityRows().length / (itemsPerPageEntity / 10) : 0"
+                                [(ngModel)]="currentPageEntity"
+                                [maxSize]="20"
+                                class="pagination-sm"
+                                previousText="&lsaquo;"
+                                nextText="&rsaquo;"
+                                firstText="&laquo;"
+                                lastText="&raquo;"></pagination>
+                            </td>
+                        </tr>
+                    </table>
+                    
+
+                    <table class="snapshotTable">
+                        <tr>
+                            <th>
+                                Arbitrary Index
+                            </th>
+                            <th *ngFor="let col of entityData.Entities[currentEntity].getColumns()">
+                                {{col}}
+                            </th>
+                        </tr>
+                        <tr *ngFor="let row of getEntityRows() | pageFilter:{itemsperpage:itemsPerPageEntity, currentPage:currentPageEntity};">
+                            <td>
+                                {{entityData.Entities[currentEntity].data.indexOf(row) + 1}}
+                            </td>
+                            <td *ngFor="let col of entityData.Entities[currentEntity].getColumns()">
+                                {{row[col]}}
+                            </td>
+                        </tr>
+                    </table>
+                    
+                </td>
+            </tr>
+        </table>
+    </tab>
+</tabset>
+    
+    
+    
+    
+
+</div>

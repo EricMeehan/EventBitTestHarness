@@ -1,1 +1,52 @@
 /* You can add global styles to this file, and also import other style files */
+.PagePreLogin {
+    
+    text-align: center;
+}
+
+.PagePostLogin {
+    
+}
+
+.TwoColTable {
+    width:90%;
+    margin: 20px;
+}
+
+.TwoColTable td {
+    width:50%;
+    padding: 3px;
+}
+
+
+.snapshotTable {border-spacing: 0}
+/*.snapshotTable th {color:white;background:black;border-right: 2px solid white}*/
+.snapshotTable td, th {padding: 0 0.2em}
+.snapshotTable tr:nth-child(odd) {color: #000; background: #FFF}
+.snapshotTable tr:nth-child(even) {color: #000; background: #dff0d8}
+
+.popover {
+    max-width: 4000px;
+}
+
+.marginCenter {
+    margin: 0px auto;
+    width:400px;
+    background:#dff0d8;
+}
+
+.width250 {
+    width:250px;
+}
+
+.loginTable {
+    margin: 0 auto;
+}
+
+.loginTable td {
+    padding: 4px;
+}
+
+.stackRight {
+    float:right;margin-right:50px;
+}
