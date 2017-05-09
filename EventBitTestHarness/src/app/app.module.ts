@@ -1,5 +1,5 @@
 import { BrowserModule } from '@angular/platform-browser';
-import { NgModule } from '@angular/core';
+import { NgModule, enableProdMode } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpModule, JsonpModule } from '@angular/http';
 
@@ -22,8 +22,13 @@ import { PaginationModule } from 'ngx-bootstrap/pagination';
 import { ModalModule } from 'ngx-bootstrap/modal';
 import { PopoverModule } from 'ngx-bootstrap/popover';
 
+//3rd party
+import { LoadingIndicator } from './loading.indicator';
+
 //pipe
 import {PageFilter} from './page.pipe';
+
+enableProdMode();
 
 @NgModule({
   declarations: [
@@ -31,7 +36,8 @@ import {PageFilter} from './page.pipe';
     HeaderComponent,
     LoginComponent,
     MainBody,
-    PageFilter
+    PageFilter,
+    LoadingIndicator
   ],
   imports: [
     BrowserModule,

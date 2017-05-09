@@ -6,12 +6,9 @@ import { Headers, RequestOptions, RequestOptionsArgs } from '@angular/http';
 
 import { LoginService } from './login.service';
 
-//import {Observable} from 'rxjs/Observable'; 
 import {Observable} from 'rxjs/Rx';
 
 import{MessageService, MessageStatus} from './message.service';
-
-declare var JXG: any;
 
 @Injectable()
 export class SnapShotService {
@@ -39,10 +36,8 @@ export class SnapShotService {
         url.push(this.getUrlBase());
         url.push(showCode);
         url.push('TrackingData');
-        //url.push('TrackedDump');
 
         return this.http.get(url.join('/'), {headers : headers})
-//            .map(response => response.json() as TrackedData);
             .toPromise()
             .then(response => this.extractTrackedData(response, showCode))
             .catch(response => this.handlePullError(response, showCode));
@@ -55,6 +50,9 @@ export class SnapShotService {
         let trackedData = new TrackedData(response.json());
 
         trackedData.url = response.url;
+
+        //If its the first time we've pulled the snapshot, just load it.
+        //If we're retrying provide user feedback with a modal
 
         if(!this.trackedData[showCode]) {
             this.trackedData[showCode] = trackedData;
@@ -85,24 +83,15 @@ export class SnapShotService {
 
         let table =  this.trackedData[showCode].tablesMap[tableName];
         
+        let headers = new Headers();
+        headers.append('Accept-Encoding', 'gzip');
+
         //No 'Access-Control-Allow-Origin' header is present on the requested resource
+        //it's too much data to pull into a table. leaving code in just in case...
         let chunks = new Array<Promise<string>>();        
 
         table.ChunkURIs.forEach((value, index, array) => {
-            //let chunk = this.http.get("abc.html", {})
-            let chunk = this.http.get("app/SampleData/Sample.txt")
-            //let chunk = this.http.get("app/SampleData/20170506171702_5d19c070-2fe7-49ab-94e6-4aed507366d3_trackedactivity_0000_part_00.gz")
-                //.map(response => 
-                //response.text()
-                //);
-            
-            //let chunk = this.http.get(value + '?callback=JSONP_CALLBACK')
-            // .map(response => 
-            //        alert(response)
-            //    ).subscribe(response =>
-            //        alert(response)
-            //    );
-            //let chunk = this.jsonp.get(value + '?callback=test')
+            let chunk = this.http.get(value, {headers : headers})
                 .toPromise()
                 .then(response => 
                     response.text()
@@ -119,27 +108,22 @@ export class SnapShotService {
                     table.Data.push(value.split('|'));
                 });
             }
-             //alert(response.join());
         )
-
     }
 
 
-    public getShows() : Show[] {
-        return [
-            { name : 'IFT999', showCode: 'IFT999'},
-            { name : 'INF999', showCode: 'INF999'},
-            //{ name : 'BCN999', showCode: 'BCN999'}
-        ];
-    }
+    // public getShows() : Show[] {
+    //     return [
+    //         { name : 'IFT999', showCode: 'IFT999'},
+    //         { name : 'INF999', showCode: 'INF999'},
+    //         //{ name : 'BCN999', showCode: 'BCN999'}
+    //     ];
+    // }
 
 }
 
 
-export class Show {
-    name:string;
-    showCode:string;
-}
+
 
 export class Table {
     TableName:string;

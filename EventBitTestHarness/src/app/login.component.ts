@@ -20,7 +20,7 @@ import { LoginService } from './login.service';
                         <option value="qa">
                             Qa
                         </option>
-                        <option value="prod">
+                        <option value="prod" disabled>
                             Prod
                         </option>
                     </select>

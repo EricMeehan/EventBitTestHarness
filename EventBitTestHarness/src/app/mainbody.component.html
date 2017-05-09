@@ -2,8 +2,8 @@
 
     <label>Show:</label>
     <select [(ngModel)]="currentShow" (ngModelChange)="showChanged()">
-        <option *ngFor="let show of shows" [value]="show.showCode">
-            {{show.name}}
+        <option *ngFor="let show of shows" [value]="show.Code">
+            {{ show.Code + ' - ' + show.Name}}
         </option>
     </select>
 
@@ -26,9 +26,11 @@
                     </div>
                 </td>
                 <td>
-                    <button (click)="pullSnapShot()">
+                    <button (click)="pullSnapShot()" *ngIf="!pullingSnapShot">
                         {{!trackedData ? 'Load Snapshot' : 'Reload Snapshot'}}
                     </button>
+                    <loading-indicator *ngIf="pullingSnapShot">
+                    </loading-indicator>
                 </td>
             </tr>
             <tr *ngIf="trackedData">
@@ -40,10 +42,11 @@
                         </option>
                     </select>
                     
-                    <template #popTemplate>
+                    <!--<template #popTemplate>
                         <ul>
                             <li *ngFor="let chunkUri of trackedData.tablesMap[currentTable].ChunkURIs">
                                 {{chunkUri}}
+                                <a href="{{chunkUri}}" download>Download</a>
                             </li>
                         </ul>
                     </template>
@@ -53,17 +56,32 @@
                             [popover]="popTemplate" 
                             popoverTitle="Chunk URIs" 
                             placement="right">View Chunk URIs
-                    </button>
+                    </button>-->
                     
                 </td>
                 <td>
-                    <button (click)="pullTableData()">Pull All Table Chunks</button>
+                    <!--<button (click)="pullTableData()">Pull All Table Chunks</button>-->
                 </td>
             </tr>
             <tr>
                 <td colspan="2">
                     
-                    <div *ngIf="trackedData && currentTable && trackedData.tablesMap && trackedData.tablesMap[currentTable] && getSnapShotRows()">
+                    <table *ngIf="trackedData && currentTable && trackedData.tablesMap && trackedData.tablesMap[currentTable]"
+                            class="snapshotTable">
+                        <tr *ngFor="let chunkUri of trackedData.tablesMap[currentTable].ChunkURIs">
+                            <td>
+                                <a href="{{chunkUri}}" download>Download</a>
+                            </td>
+                            <td>
+                                {{chunkUri}}
+
+
+
+                            </td>
+                        </tr>
+                    </table>
+
+                    <!--<div *ngIf="trackedData && currentTable && trackedData.tablesMap && trackedData.tablesMap[currentTable] && getSnapShotRows()">
                         
                         <table class="marginCenter">
                             <tr>
@@ -133,7 +151,7 @@
                                 </td>
                             </tr>
                         </table>
-                    </div>
+                    </div>-->
                 </td>
             </tr>
         </table>
@@ -143,8 +161,8 @@
         <table class="TwoColTable">
             <tr>
                 <td>
-                    <label>Entity</label>
-                    <select [(ngModel)]="currentEntity">
+                    <label>Entity:</label>
+                    <select [(ngModel)]="currentEntity" (ngModelChange)="entityChanged()">
                         <option *ngFor="let entity of entities" [value]="entity">
                             {{entity}}
                         </option>
@@ -173,9 +191,23 @@
 
                 </td>
                 <td>
-                    <label>Max Rows:</label>
-                    <input [(ngModel)]="entityPullSize" type="number" />
-                    <button (click)="pullEntityData()">Pull Entity Data</button>
+                    <!--<label>Since:</label>
+                    <input disabled type="number" [value]="entityData && entityData.Entities[currentEntity] ? entityData.Entities[currentEntity].getHighestSysRowStampNum() : 0" />-->
+                    
+                    <!--<label>Override Since:</label>
+                    <input type="checkbox" [(ngModel)]="overrideHighestSysRowStampNum" />-->
+                    <div *ngIf="currentEntity && !pullingEntity">
+                        <label>Since</label>
+                        <input [(ngModel)]="since" type="number" />
+
+
+                        <label>Max Rows:</label>
+                        <input [(ngModel)]="entityPullSize" type="number" />
+                        <button (click)="pullEntityData()">Pull Entity Data</button>
+                    </div>
+                    
+                    <loading-indicator *ngIf="pullingEntity">
+                    </loading-indicator>
                 </td>
             </tr>
             <tr *ngIf="entityData && currentEntity && entityData.Entities[currentEntity]">

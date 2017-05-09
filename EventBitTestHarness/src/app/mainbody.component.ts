@@ -1,25 +1,29 @@
-import { Component } from '@angular/core';
-import { SnapShotService, Show, TrackedData, Table} from './snapshot.service';
-import { EntityService, Entity, ShowEntities} from './entity.service';
+import { Component, DoCheck } from '@angular/core';
+import { SnapShotService, TrackedData, Table} from './snapshot.service';
+import { EntityService, Entity, ShowEntities, Show} from './entity.service';
 import { LoginService } from './login.service';
 
 @Component({
     selector: 'mainbody',
     templateUrl: './mainbody.component.html',
 })
-export class MainBody {
+export class MainBody implements DoCheck {
     shows: Show[];
     currentShow: string;
     
     //snapshot
     trackedData: TrackedData;
     currentTable: string;
+    pullingSnapShot: Boolean=false;
 
     //entity
     entities : string[];
     entityData : ShowEntities;
     currentEntity: string;
     entityPullSize: Number = 1000;
+    since : Number = 0;
+    overrideHighestSysRowStampNum : Boolean;
+    pullingEntity : Boolean = false;
 
     //pagination
     public currentPageSnapShot: number = 1;
@@ -28,19 +32,39 @@ export class MainBody {
     public currentPageEntity: number = 1;
     public itemsPerPageEntity: number = 200;
 
-    constructor(private loginService: LoginService, private snapShotService:SnapShotService, private entityService:EntityService) {
-        this.shows = snapShotService.getShows();
+    private environment: string = null;;
+
+    constructor(private loginService: LoginService, private snapShotService:SnapShotService, private entityService:EntityService)  {
+        
         this.entities = entityService.getEntities();
+    }
+
+    //detect if environment has changed, load shows
+    ngDoCheck() {
+        if(this.loginService.IsLoggedIn() && this.loginService.environment != this.environment) {
+            this.environment = this.loginService.environment;
+            this.entityService.getShows().then(response => this.shows = response);
+        }
     }
 
     showChanged() {
         this.trackedData = this.snapShotService.getLocalTrackedData(this.currentShow);
         this.entityData = this.entityService.getLocalEntityData(this.currentShow);
+        if(this.currentEntity && this.entityData && this.entityData.Entities && this.entityData.Entities[this.currentEntity])
+            this.since = this.entityData.Entities[this.currentEntity].getHighestSysRowStampNum();
+        else 
+            this.since = 0;
     }
 
     pullSnapShot() {
+
+        this.pullingSnapShot = true;
+
         this.snapShotService.getServerTrackedData(this.currentShow)
-            .then(response => this.trackedData = response );
+            .then(response => {
+                this.trackedData = response;
+                this.pullingSnapShot = false;
+            });
     }
 
     pullTableData() {
@@ -84,10 +108,16 @@ export class MainBody {
     }
 
     pullEntityData() {
-        this.entityService.getServerEntityData(this.currentShow, this.currentEntity, this.entityPullSize)
-            .then(response => 
-            this.entityData = response
-            );
+
+        this.pullingEntity = true;
+
+        this.entityService.getServerEntityData(this.currentShow, this.currentEntity, this.entityPullSize, this.since)
+            .then(response => {
+                this.entityData = response;
+                this.since = this.entityData.Entities[this.currentEntity].getHighestSysRowStampNum();
+                this.entityData.Entities[this.currentEntity].filteredData = null;
+                this.pullingEntity = false;
+            });
     }
 
     snapShotFiltersChanged() {
@@ -96,5 +126,12 @@ export class MainBody {
 
     entityFiltersChanged() {
         this.entityData.Entities[this.currentEntity].filteredData = null;
+    }
+
+    entityChanged() {
+        if(this.currentEntity && this.entityData && this.entityData.Entities && this.entityData.Entities[this.currentEntity])
+            this.since = this.entityData.Entities[this.currentEntity].getHighestSysRowStampNum();
+        else 
+            this.since = 0;
     }
 }

@@ -18,14 +18,14 @@ export class EntityService {
     entityData: {[showCode:string]: ShowEntities} = {};
 
     constructor(private http:Http, private loginService:LoginService, private messageService:MessageService){
-        
+
     }
 
     private getUrlBase() : string {
         return 'https://' + this.loginService.environment + '.experienteventbit.com/webapi/API/Event';
     }
 
-    public getServerEntityData(showCode:string, entityName:string, entityPullSize:Number) : Promise<ShowEntities> {
+    public getServerEntityData(showCode:string, entityName:string, entityPullSize:Number, forceHighestSysRowStampNum:Number) : Promise<ShowEntities> {
 
         if(!this.entityData[showCode])
             this.entityData[showCode] = new ShowEntities(showCode);
@@ -41,7 +41,9 @@ export class EntityService {
 
         let qs = '?include=-&max=' + entityPullSize + '&since=';
 
-        if(this.entityData[showCode].Entities[entityName])
+        if(forceHighestSysRowStampNum != -1)
+            qs += forceHighestSysRowStampNum;
+        else if(this.entityData[showCode].Entities[entityName])
             qs += this.entityData[showCode].Entities[entityName].getHighestSysRowStampNum();
         else
             qs += 0;
@@ -122,6 +124,35 @@ export class EntityService {
             'ProductCategory'
             ];
     }
+
+    public getShows() : Promise<Show[]> {
+
+    let headers = new Headers();
+        headers.append("X-AUTH-CLAIMS", this.loginService.getClaim().ogString)
+
+        return this.http.get(this.getUrlBase(), {headers: headers})
+            .toPromise()
+            .then(response => {
+                this.loginService.setClaim(response.headers.get("x-auth-claims"));
+
+                return response.json()
+            })
+            .catch(response => {
+                this.loginService.setClaim(response.headers.get("x-auth-claims"));
+                
+                this.messageService.messages.push({
+                            message: response.json()[0].Text,
+                            messageStatus: MessageStatus.Error
+                        });
+
+                return [];
+            });
+    }
+}
+
+export class Show {
+    name:string;
+    showCode:string;
 }
 
 export class ShowEntities {
